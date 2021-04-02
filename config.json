@@ -1,0 +1,18 @@
+{
+    "diable_popup_when_no_recommended_selection": true,
+    "exceptions": {
+        "C:\\Windows\\system32\\cmd.exe": "ConsoleWindowClass",
+        "DWM Notification Window": "Dwm",
+        "KillUselessWindows": "CabinetWClass",
+        "Telegram": "Qt5152QWindowIcon",
+        "Telegram (1)": "Qt5152QWindowIcon",
+        "config.json - KillUselessWindows - Visual Studio Code": "Chrome_WidgetWin_1",
+        "main.bat - KillUselessWindows - Visual Studio Code": "Chrome_WidgetWin_1",
+        "python - How to prettyprint a JSON file? - Stack Overflow - Google Chrome": "Chrome_WidgetWin_1",
+        "tk": "TkTopLevel",
+        "v2rayN - V3.13 - 2020/03/31": "WindowsForms10.Window.8.app.0.141b42a_r6_ad1",
+        "微信": "WeChatMainWndForPC",
+        "雷電模擬器": "LDPlayerMainFrame"
+    },
+    "max_idle_time": 60
+}

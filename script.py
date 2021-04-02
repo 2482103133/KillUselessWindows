@@ -82,28 +82,32 @@ def pop(idles):
     cbs.append([sg.Button("Ok"),sg.Button("Cancel"),sg.Button("Quit"),sg.Checkbox("Diable popup when no recommended", default=config["diable_popup_when_no_recommended_selection"],key="disble_popup"),sg.Checkbox("Add unselected to exceptions", default=True,key="add_exceptions")])
     event, values = sg.Window('Found some idle windows for you!', layout=cbs,size=(800, 400),resizable=True,force_toplevel=True).read(close=True)
 
-    if event == 'Ok' or event == 'Cancel':
+    if event == 'Ok' :
+        config=read_config() 
         exections={}
         for key in values:
             
             if(key.startswith("hwnd")  ):
                 handle=int(key.split("-")[1])
-
+                ex=next(x for x in idles if x["hwnd"]==str(handle))
                 #关闭所有被勾选的窗口,并将未勾选的窗口加入到exception列表
-                if values[key] and event == 'Ok':
+                if values[key] :
                     try:
                         print("Killing "+str(handle))
                         PostMessage(handle,win32con.WM_CLOSE,0,0)
                         PostMessage(handle,win32con.WM_ENDSESSION,0,0)
+                        if(ex["name"] in config["exceptions"] and  ex["className"]==config["exceptions"][ex["name"]]):
+                            del config["exceptions"][ex["name"]]
+                        
                     except Exception as e:
                         print(e)
 
                 else:
-                    ex=next(x for x in idles if x["hwnd"]==str(handle))
+                    
                     exections[ex["name"]]=ex["className"]
 
 
-        config=read_config()           
+                  
         #判断是否将未勾选的列表加入到例外列表中, 以后将自动取消勾选位于例外列表中的窗口
         if(values["add_exceptions"]):
             l=config["exceptions"]

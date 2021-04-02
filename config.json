@@ -10,9 +10,11 @@
         "main.bat - KillUselessWindows - Visual Studio Code": "Chrome_WidgetWin_1",
         "python - How to prettyprint a JSON file? - Stack Overflow - Google Chrome": "Chrome_WidgetWin_1",
         "tk": "TkTopLevel",
+        "tk (未响应)": "Ghost",
         "v2rayN - V3.13 - 2020/03/31": "WindowsForms10.Window.8.app.0.141b42a_r6_ad1",
-        "微信": "WeChatMainWndForPC",
+        "大圣盘 - 网盘搜索引擎 - Google Chrome": "Chrome_WidgetWin_1",
+        "欢迎使用百度网盘": "DuiHostWnd",
         "雷電模擬器": "LDPlayerMainFrame"
     },
-    "max_idle_time": 60
+    "max_idle_time": 6
 }

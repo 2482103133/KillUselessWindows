@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 from win32gui import *
+from win32process import *
 from datetime import datetime
 from time import sleep
+import psutil
 import PySimpleGUI as sg
 import win32con  
 import json
 import ctypes, sys
 import os
 import sys
-
+import re
 sys.stdout.reconfigure(encoding='utf-8')
 #配置文件路径
 
@@ -37,10 +39,13 @@ def foo(hwnd,mouse):
     allPrograms.append(hwnd)
 
     #将所有最小化的窗口加入待关闭列表
-    if IsWindow(hwnd) and IsWindowEnabled(hwnd) and IsIconic(hwnd):
+    if IsWindow(hwnd) and IsWindowEnabled(hwnd) and  IsIconic(hwnd) :
         if not programs.__contains__(hwnd) :
-            programs[hwnd]={"name":GetWindowText(hwnd),"className":GetClassName(hwnd),"hwnd":str(hwnd),"iconicTime":datetime.now()}
-    elif IsWindow(hwnd) and IsWindowEnabled(hwnd) and not IsIconic(hwnd):
+            
+            tid, pid=GetWindowThreadProcessId(hwnd)
+            # print(pid)
+            programs[hwnd]={"name":GetWindowText(hwnd),"className":GetClassName(hwnd),"hwnd":str(hwnd),"iconicTime":datetime.now(),"pid":pid,"process":os.path.basename(psutil.Process(pid).exe())}
+    elif IsWindow(hwnd) and IsWindowEnabled(hwnd)  and  (IsWindowVisible(hwnd) or not IsIconic(hwnd)):
         if programs.__contains__(hwnd):
             del programs[hwnd]
 
@@ -59,10 +64,18 @@ def pop(idles):
     ifNoSelection=True
     checked=[]
     for idle in idles:
-        unselected=(idle["name"]  in exceptions and idle["className"]==exceptions[idle["name"]] )
+        match=False
+        for exp in config["exception_rules"]:
+            if(re.match(exp,idle["name"]+"[@]"+idle["className"]+"[@]"+idle["process"])!=None):
+                match=True
+                break
+
+        unselected=((idle["name"]  in exceptions and idle["className"]==exceptions[idle["name"]]) or  match  )
         if not unselected:
             ifNoSelection=False
-        cb=sg.Checkbox(idle["name"], default=not unselected,key="hwnd-"+str(idle["hwnd"]))
+        
+        cb=sg.Checkbox(idle['process']+"/"+idle["name"], default=not unselected,key="hwnd-"+str(idle["hwnd"]),tooltip=idle["className"]+"  "+idle["process"])
+    
         if unselected:
             checked.append(cb)
         else:
@@ -70,7 +83,7 @@ def pop(idles):
     
     for cb in checked:
         row.append(cb)
-        if len(row)==3:
+        if len(row)==2:
             cbs.append(row)
             row=[]
     if(len(row)>0):
@@ -80,7 +93,7 @@ def pop(idles):
         return
 
     cbs.append([sg.Button("Ok"),sg.Button("Cancel"),sg.Button("Quit"),sg.Checkbox("Diable popup when no recommended", default=config["diable_popup_when_no_recommended_selection"],key="disble_popup"),sg.Checkbox("Add unselected to exceptions", default=True,key="add_exceptions")])
-    event, values = sg.Window('Found some idle windows for you!', layout=cbs,size=(800, 400),resizable=True,force_toplevel=True).read(close=True)
+    event, values = sg.Window('Found some idle windows for you!', layout=cbs,size=(800, 400),resizable=True).read(close=True)
 
     if event == 'Ok' :
         config=read_config() 
@@ -93,8 +106,11 @@ def pop(idles):
                 #关闭所有被勾选的窗口,并将未勾选的窗口加入到exception列表
                 if values[key] :
                     try:
-                        print("Killing "+str(handle))
+                        print("Killing "+str(ex))
+                        
                         PostMessage(handle,win32con.WM_CLOSE,0,0)
+                        PostQuitMessage(handle)
+                        PostMessage(handle,win32con.WM_QUIT,0,0)
                         PostMessage(handle,win32con.WM_ENDSESSION,0,0)
                         if(ex["name"] in config["exceptions"] and  ex["className"]==config["exceptions"][ex["name"]]):
                             del config["exceptions"][ex["name"]]
@@ -118,6 +134,20 @@ def pop(idles):
 
         save_config(config)
         
+    elif event == 'Cancel':
+        for key in values:
+            
+            if(key.startswith("hwnd")  ):
+
+                #将勾选的但是被取消的项目从idle列表中移除
+                if values[key] :
+                    try:
+                        handle=int(key.split("-")[1])
+                        ex=next(x for x in idles if x["hwnd"]==str(handle))
+                        idles.remove(ex)
+                        
+                    except Exception as e:
+                        print(e)
 
     elif event == 'Exceptions':
         print(values)
@@ -131,7 +161,7 @@ while True:
     EnumWindows(foo, 0)
     now=datetime.now()
     idles=[]
-    
+    kets_to_remove=[]
     for key in programs.keys():
         
         program=programs[key]
@@ -143,10 +173,13 @@ while True:
         
         if span>=config["max_idle_time"]:
             idles.append(program)
-        
+    if(key not in allPrograms):
+        kets_to_remove.append(key)
+    for key in kets_to_remove:
+        del programs[key]
     pop(idles)
     print("total:"+str(programs.keys().__len__()))
-    sleep(5)
+    sleep(config["test-interval"])
     
 
 

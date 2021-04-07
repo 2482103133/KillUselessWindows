@@ -93,8 +93,10 @@ def pop(idles):
         return
 
     cbs.append([sg.Button("Ok"),sg.Button("Cancel"),sg.Button("Quit"),sg.Checkbox("Diable popup when no recommended", default=config["diable_popup_when_no_recommended_selection"],key="disble_popup"),sg.Checkbox("Add unselected to exceptions", default=True,key="add_exceptions")])
-    event, values = sg.Window('Found some idle windows for you!', layout=cbs,size=(800, 400),resizable=True).read(close=True)
-
+    
+    window=sg.Window('Found some idle windows for you!', layout=cbs,size=(800, 400),resizable=True)
+    event, values = window.read(close=True)
+    print("window closed")
     if event == 'Ok' :
         config=read_config() 
         exections={}
@@ -109,7 +111,6 @@ def pop(idles):
                         print("Killing "+str(ex))
                         
                         PostMessage(handle,win32con.WM_CLOSE,0,0)
-                        PostQuitMessage(handle)
                         PostMessage(handle,win32con.WM_QUIT,0,0)
                         PostMessage(handle,win32con.WM_ENDSESSION,0,0)
                         if(ex["name"] in config["exceptions"] and  ex["className"]==config["exceptions"][ex["name"]]):
